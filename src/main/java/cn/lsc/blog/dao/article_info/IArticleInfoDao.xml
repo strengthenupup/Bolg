@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lsc.blog.dao.article_info.IArticleInfoDao">
+	<!-- 建立sql查询结果字段与实体属性的关系 -->
+	<resultMap id="ArticleInfoMap" type="cn.lsc.blog.view.ArticleInfo" >
+		<result column="id" property="id"/>
+		<result column="title" property="title"/>
+		<result column="type_id" property="typeId"/>
+		<result column="content" property="content"/>
+		<result column="content_text" property="contentText"/>
+		<result column="cover" property="cover"/>
+		<result column="view_count" property="viewCount"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="status" property="status"/>
+		<result column="delete_time" property="deleteTime"/>
+		
+		<result column="name" property="name"/>
+	</resultMap>
+	
+	
+	<!-- 查询单个文章	根据type_Id-->
+    <select id="selectArticleByType"  resultMap="ArticleInfoMap">
+    	select ai.title,ai.type_id,ti.name,ai.content_text,ai.id,ai.cover,DATE_FORMAT(ai.update_time,'%Y-%m-%d') update_time
+		from article_info ai inner join type_info ti 
+		on ai.type_id = ti.id
+		where ai.type_id = #{typeId} and status = 1
+    </select>
+    
+    
+	<!-- 查询所有文章（正常）	-->
+	<select id="listNormal" resultMap="ArticleInfoMap" >
+		select ai.id,ti.name,ai.title,ai.content_text,DATE_FORMAT(ai.update_time,'%Y-%m-%d') update_time,DATE_FORMAT(ai.delete_time,'%Y-%m-%d') delete_time,ai.cover,ai.type_id
+		from article_info ai INNER JOIN type_info ti 
+		ON ai.type_id = ti.id
+		<if test="typeId!=null and typeId!=''">where ai.type_id = #{typeId}</if> 
+		<if test="startDate!=null and startDate!=''">and update_time between #{startDate} and #{endDate}</if> 
+		<if test="keyWord!=null and keyWord!=''">and ai.title like #{keyWord}</if> 
+		<if test="status!=null and status!=''">and ai.status = #{status}</if> 
+		order by ai.id asc
+	</select>
+	
+	
+	<!-- 查询单个文章	根据id-->
+	<select id="selectArticleById" resultMap="ArticleInfoMap" >
+		select ai.id,ai.title,ai.type_id,ti.name,ai.content,ai.cover,DATE_FORMAT(ai.update_time,'%Y-%m-%d') update_time,ai.view_count 
+		from article_info ai inner join type_info ti on ai.type_id = ti.id
+		where ai.id = #{id}
+	</select>
+	
+	<!-- 插入新的文章 -->
+	<insert id="insertArticle" parameterType="cn.lsc.blog.view.ArticleInfo">
+		insert into article_info(title,type_id,content,content_text,cover,view_count,update_time,status) 
+		value(#{title},#{typeId},#{content},#{contentText},#{cover},#{viewCount},#{updateTime},#{status})
+	</insert>
+	
+	<!-- 跟新文章 -->
+	<update id="updateArticle" >
+		update article_info
+		<set>
+			<if test="title!=null and title!=''">title=#{title},</if>
+			<if test="typeId!=null and typeId!=''">type_id=#{typeId},</if>
+			<if test="content!=null and content!=''">content=#{content},</if>
+			<if test="contentText!=null and contentText!=''">content_text=#{contentText},</if>
+			<if test="cover!=null and cover!=''">cover=#{cover},</if>
+			<if test="viewCount!=null and viewCount!=''">view_count=#{viewCount},</if>
+			<if test="updateTime!=null and updateTime!=''">update_time=#{updateTime},</if>
+		</set>
+		where id=#{id}
+	</update>
+	<!-- 删除或者恢复文章(修改status值) -->
+	<update id="update_status" >  
+		update article_info set status = #{status} ,delete_time = #{delete_time} where id = #{id}
+    </update>  
+    <!--批量移动文章 -->
+    <update id="trans">
+    	update article_info set type_id = #{trans_typeId} where id = #{trans_id}
+    </update>
+    <!-- 彻底删除文章 -->
+    <delete id="delete">
+    	delete from article_info where id =#{id}
+    </delete>
+    <!-- 跟新浏览量 -->
+    <update id="updateViewCount">
+    	update article_info set view_count=#{nViewCount} where id = #{id}
+    </update>
+    
+    
+</mapper>
